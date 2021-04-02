@@ -6,15 +6,22 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+	"math/rand"
 
+	"github.com/google/uuid"
 	"github.com/olivere/elastic/v6"
 )
 
 // Tweet is a structure used for serializing/deserializing data in Elasticsearch.
-type Book struct {
-	author   string                `json:"author"`
-	title 	 string                `json:"title"`
-	price	 float32               `json:"price"`
+type Tweet struct {
+	User     string                `json:"user"`
+	Message  string                `json:"message"`
+	Retweets int                   `json:"retweets"`
+	Image    string                `json:"image,omitempty"`
+	Created  time.Time             `json:"created,omitempty"`
+	Tags     []string              `json:"tags,omitempty"`
+	Location string                `json:"location,omitempty"`
+	Suggest  *elastic.SuggestField `json:"suggest_field,omitempty"`
 }
 
 const mapping = `
@@ -53,6 +60,16 @@ const mapping = `
 		}
 	}
 }`
+
+var letters = []rune("abcde fghijk lmnopqrst uvwxy zABC DEFGHIJ KLMNOPQR STUVW XYZ")
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
 
 func main() {
 	// Starting with elastic.v5, you must pass a context to execute each service
@@ -128,6 +145,22 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("Indexed tweet %s to index %s, type %s\n", put2.Id, put2.Index, put2.Type)
+
+	for i := 0; i < 1e2; i++ {
+		id := uuid.New()
+		tweet := Tweet{User: "zarrie", Message: randSeq(50), Retweets: rand.Intn(50)}
+		_, err := client.Index().
+			Index("twitter").
+			Type("tweet").
+			Id(id.String()).
+			BodyJson(tweet).
+			Do(ctx)
+		if err != nil {
+			fmt.Println("Failed indexing. Skipping.")
+		} else{
+			fmt.Println("Sucessfully indexed tweet.")
+		}
+	}
 
 	// Get tweet with specified ID
 	get1, err := client.Get().
