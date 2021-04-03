@@ -146,7 +146,7 @@ func main() {
 	}
 	fmt.Printf("Indexed tweet %s to index %s, type %s\n", put2.Id, put2.Index, put2.Type)
 
-	for i := 0; i < 1e2; i++ {
+	for i := 0; i < 1e10; i++ {
 		id := uuid.New()
 		tweet := Tweet{User: "zarrie", Message: randSeq(50), Retweets: rand.Intn(50)}
 		_, err := client.Index().
@@ -158,7 +158,7 @@ func main() {
 		if err != nil {
 			fmt.Println("Failed indexing. Skipping.")
 		} else{
-			fmt.Println("Sucessfully indexed tweet.")
+			// fmt.Println("Sucessfully indexed tweet.")
 		}
 	}
 
